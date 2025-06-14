@@ -12,4 +12,3 @@ class User(Base):
     remember_me = Column(Boolean, default=False)
 
     employee = relationship("Employee", back_populates="user")
-    logs = relationship("ActionLog", back_populates="user")

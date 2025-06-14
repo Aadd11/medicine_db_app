@@ -15,7 +15,7 @@ from sqlalchemy import and_, or_, func
 
 from app.database_manager import db_manager
 from app.models import (Medicine, MedicineType, Supplier, Customer, Employee, 
-                       Sale, Prescription, ActionLog, User)
+                       Sale, Prescription, User)
 
 #Table items default logic overrides: read only and numbers inseat of strings
 class ReadOnlyTableWidgetItem(QTableWidgetItem):
@@ -497,8 +497,6 @@ class ViewWindow(QWidget):
         self.load_employees_data()
         self.load_sales_data()
         self.load_prescriptions_data()
-        self.load_logs_data()
-
     def load_medicines_data(self):
         """Load medicines data with filters"""
         try:
@@ -676,38 +674,6 @@ class ViewWindow(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Ошибка загрузки данных о рецептах: {str(e)}")
 
-    def load_logs_data(self):
-        """Load action logs data"""
-        try:
-            session = db_manager.get_session()
-
-            logs = session.query(ActionLog).options(
-                joinedload(ActionLog.user).joinedload(User.employee)
-            ).order_by(ActionLog.timestamp.desc()).limit(500).all()
-
-            self.logs_table.setRowCount(len(logs))
-            for row, log in enumerate(logs):
-                self.logs_table.setItem(row, 0, NumericTableWidgetItem(str(log.id)))
-
-                # User info
-                user_info = ""
-                if log.user:
-                    if log.user.employee:
-                        user_info = f"{log.user.employee.name} ({log.user.username})"
-                    else:
-                        user_info = log.user.username
-                self.logs_table.setItem(row, 1, make_item(user_info))
-
-                self.logs_table.setItem(row, 2, make_item(log.action or ""))
-                self.logs_table.setItem(row, 3, make_item(log.table_name or ""))
-                self.logs_table.setItem(row, 4, make_item(str(log.record_id) if log.record_id else ""))
-                self.logs_table.setItem(row, 5, make_item(log.timestamp.strftime("%d.%m.%Y %H:%M:%S")))
-                self.logs_table.setItem(row, 6, make_item(log.details or ""))
-
-            session.close()
-
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка загрузки журнала действий: {str(e)}")
 
     def refresh_current_tab(self):
         """Refresh data for current tab"""
@@ -720,7 +686,6 @@ class ViewWindow(QWidget):
             self.load_employees_data,
             self.load_sales_data,
             self.load_prescriptions_data,
-            self.load_logs_data
         ]
 
         if current_index < len(refresh_methods):

@@ -27,13 +27,13 @@ class UserManagementWindow(QWidget):
     def init_ui(self):
         layout = QVBoxLayout()
 
-        # Заголовок
+
         title = QLabel("Пользователи")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 18px; font-weight: bold;")
         layout.addWidget(title)
 
-        # Таблица пользователей
+
         self.table = QTableWidget()
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["Логин", "Имя", "Роль"])
@@ -60,7 +60,7 @@ class UserManagementWindow(QWidget):
 
         layout.addLayout(form_layout)
 
-        # Кнопки управления
+
         btn_layout = QHBoxLayout()
 
         self.add_btn = QPushButton("Добавить")
@@ -76,7 +76,7 @@ class UserManagementWindow(QWidget):
         layout.addLayout(btn_layout)
         self.setLayout(layout)
 
-        # Подключение событий
+
         self.add_btn.clicked.connect(self.create_user)
         self.edit_btn.clicked.connect(self.edit_user)
         self.delete_btn.clicked.connect(self.delete_user)

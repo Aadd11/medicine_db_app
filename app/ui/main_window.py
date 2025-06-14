@@ -12,7 +12,6 @@ from app.auth.auth_manager import auth_manager
 from app.database_manager import db_manager
 from app.ui.view_window import ViewWindow
 from app.ui.edit_window import EditWindow
-#from app.ui.analytics_window import AnalyticsWindow
 from app.ui.user_management_window import UserManagementWindow
 
 class MainWindow(QMainWindow):
@@ -22,7 +21,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.view_window = None
         self.edit_window = None
-        self.analytics_window = None
         self.user_management_window = None
         self.init_ui()
         self.start_auto_refresh()
@@ -55,11 +53,7 @@ class MainWindow(QMainWindow):
             self.edit_button.setCheckable(True)
             self.edit_button.clicked.connect(self.show_edit_mode)
             nav_layout.addWidget(self.edit_button)
-        
-        self.analytics_button = QPushButton("Аналитика")
-        self.analytics_button.setCheckable(True)
-#        self.analytics_button.clicked.connect(self.show_analytics_mode)
-        nav_layout.addWidget(self.analytics_button)
+
         
         # Admin-only buttons
         if auth_manager.is_admin():
@@ -99,8 +93,7 @@ class MainWindow(QMainWindow):
         self.show_view_mode()
         
         # Update button states
-        self.update_button_states()
-    
+
     def create_menu_bar(self):
         """Create menu bar"""
         menubar = self.menuBar()
@@ -125,16 +118,7 @@ class MainWindow(QMainWindow):
         about_action = QAction('О программе', self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
-    
-    def update_button_states(self):
-        """Update button states based on permissions"""
-        is_admin = auth_manager.is_admin()
-        
-        # Edit mode only for admin
-        self.edit_button.setEnabled(is_admin)
-        if not is_admin and self.edit_button.isChecked():
-            self.show_view_mode()
-    
+
     def show_view_mode(self):
         """Show view mode"""
         if not self.view_window:
@@ -142,12 +126,7 @@ class MainWindow(QMainWindow):
         
         self.content_widget.addWidget(self.view_window)
         self.content_widget.setCurrentWidget(self.view_window)
-        
-        # Update button states
-        self.view_button.setChecked(True)
-        self.edit_button.setChecked(False)
-        self.analytics_button.setChecked(False)
-    
+
     def show_edit_mode(self):
         """Show edit mode (admin only)"""
         if not auth_manager.is_admin():
@@ -161,24 +140,8 @@ class MainWindow(QMainWindow):
         self.content_widget.addWidget(self.edit_window)
         self.content_widget.setCurrentWidget(self.edit_window)
 
-        # Update button states
         self.view_button.setChecked(False)
         self.edit_button.setChecked(True)
-        self.analytics_button.setChecked(False)
-    
-    # def show_analytics_mode(self):
-    #     """Show analytics mode"""
-    #     if not self.analytics_window:
-    #         self.analytics_window = AnalyticsWindow()
-    #
-    #     self.content_widget.addWidget(self.analytics_window)
-    #     self.content_widget.setCurrentWidget(self.analytics_window)
-    #
-    #     # Update button states
-    #     self.view_button.setChecked(False)
-    #     self.edit_button.setChecked(False)
-    #     self.analytics_button.setChecked(True)
-
     def show_user_management(self):
         """Show user management window (admin only)"""
         if not auth_manager.is_admin():
@@ -200,7 +163,7 @@ class MainWindow(QMainWindow):
         """Start auto-refresh timer"""
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh_data)
-        self.refresh_timer.start(30000)  # Refresh every 30 seconds
+        self.refresh_timer.start(30000)
     
     def show_about(self):
         """Show about dialog"""
@@ -221,18 +184,14 @@ class MainWindow(QMainWindow):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            # Stop auto-refresh
             if hasattr(self, 'refresh_timer'):
                 self.refresh_timer.stop()
-            
-            # Close child windows
+
             if self.user_management_window:
                 self.user_management_window.close()
-            
-            # Logout
+
             auth_manager.logout()
-            
-            # Show login window
+
             from app.ui.login_window import LoginWindow
             self.login_window = LoginWindow()
             self.login_window.show()
@@ -243,8 +202,7 @@ class MainWindow(QMainWindow):
         """Handle window close event"""
         if hasattr(self, 'refresh_timer'):
             self.refresh_timer.stop()
-        
-        # Close child windows
+
         if self.user_management_window:
             self.user_management_window.close()
         

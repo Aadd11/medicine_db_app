@@ -9,4 +9,3 @@ from .medicine_type import MedicineType
 from .supplier import Supplier
 from .prescription import Prescription
 from .sale import Sale
-from .log import ActionLog
