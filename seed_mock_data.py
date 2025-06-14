@@ -1,13 +1,18 @@
-from app.db import init_engine, get_session
-from app.models import *
-from app.config import load_db_config
 from datetime import date
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.models import *
+
+def get_session(db_url: str):
+    engine = create_engine(db_url, echo=False, future=True)
+    Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return Session()
 
 
 def seed_data():
-    db_url = load_db_config()
-    init_engine(db_url)
-    session = get_session()
+    db_url = "postgresql://postgres:1465@localhost:5432/pharmacy_db"
+    session = get_session(db_url)
 
     # Очистка старых данных (опционально)
     session.query(Sale).delete()
@@ -16,6 +21,7 @@ def seed_data():
     session.query(MedicineType).delete()
     session.query(Supplier).delete()
     session.query(Customer).delete()
+    session.query(User).delete()
     session.query(Employee).delete()
     session.commit()
 
@@ -28,7 +34,7 @@ def seed_data():
     t1 = MedicineType(name="Антибиотик")
     t2 = MedicineType(name="Обезболивающее")
     t3 = MedicineType(name="Противовирусное")
-    t4 = MedicineType(name="От горла")
+    t4 = MedicineType(name="Антисептик")
     t5 = MedicineType(name="Жаропонижающее")
 
     # Лекарства
