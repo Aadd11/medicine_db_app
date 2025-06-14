@@ -14,19 +14,21 @@ from app.config import AppSettings
 from app.ui.database_setup_window import DatabaseSetupWindow
 from app.ui.main_window import MainWindow
 
+
 class LoginWindow(QWidget):
     """Login window"""
-    
+
     login_successful = pyqtSignal()
-    
+
     def __init__(self):
         super().__init__()
         self.settings = AppSettings()
         self.main_window = None
         self.db_setup_window = None
+        self.user_role = None  # 'admin' или 'user'
         self.init_ui()
         self.load_saved_connection()
-    
+
     def init_ui(self):
         """Initialize UI"""
         self.setWindowTitle("Система управления аптекой - Вход")
@@ -132,9 +134,8 @@ class LoginWindow(QWidget):
         
         # Check if first run
         self.check_first_run()
-    
+
     def load_saved_connection(self):
-        """Load saved database connection"""
         db_info = self.settings.get_db_connection_info()
         if db_info:
             success = db_manager.connect(
@@ -144,25 +145,32 @@ class LoginWindow(QWidget):
             if success:
                 self.update_db_status(True)
                 self.check_first_run()
-    
+
+                if db_info['username'] == 'pharmacy_user':
+                    self.user_role = 'user'
+                else:
+                    self.user_role = 'admin'
+
     def show_database_setup(self):
-        """Show database setup window"""
         if not self.db_setup_window:
             self.db_setup_window = DatabaseSetupWindow()
             self.db_setup_window.connection_successful.connect(self.on_db_connected)
-        
         self.db_setup_window.show()
         self.db_setup_window.raise_()
-    
+
     def on_db_connected(self):
-        """Handle successful database connection"""
         self.update_db_status(True)
         self.check_first_run()
+        db_info = self.settings.get_db_connection_info()
+        if db_info:
+            if db_info['username'] == 'pharmacy_user':
+                self.user_role = 'user'
+            else:
+                self.user_role = 'admin'
         if self.db_setup_window:
             self.db_setup_window.close()
-    
+
     def update_db_status(self, connected: bool):
-        """Update database connection status"""
         if connected:
             self.db_status_label.setText("Подключено")
             self.db_status_label.setStyleSheet("color: green;")
@@ -173,69 +181,63 @@ class LoginWindow(QWidget):
             self.db_status_label.setStyleSheet("color: red;")
             self.login_button.setEnabled(False)
             self.create_admin_button.setEnabled(False)
-    
+
     def check_first_run(self):
-        """Check if this is first run and show appropriate tab"""
         if db_manager.is_connected:
             if auth_manager.is_first_run():
-                self.tab_widget.setCurrentIndex(1)  # Show setup tab
+                self.tab_widget.setCurrentIndex(1)
             else:
-                self.tab_widget.setCurrentIndex(0)  # Show login tab
-    
+                self.tab_widget.setCurrentIndex(0)
+
     def login(self):
-        """Handle login"""
         username = self.username_input.text().strip()
         password = self.password_input.text()
         remember_me = self.remember_checkbox.isChecked()
-        
+
         if not username or not password:
             QMessageBox.warning(self, "Ошибка", "Введите имя пользователя и пароль")
             return
-        
+
         if auth_manager.authenticate(username, password, remember_me):
             self.open_main_window()
         else:
             QMessageBox.warning(self, "Ошибка", "Неверное имя пользователя или пароль")
-    
+
     def create_admin(self):
-        """Create admin user"""
         username = self.admin_username_input.text().strip()
         password = self.admin_password_input.text()
         confirm_password = self.admin_password_confirm.text()
         employee_name = self.admin_name_input.text().strip()
-        
+
         if not all([username, password, confirm_password, employee_name]):
             QMessageBox.warning(self, "Ошибка", "Заполните все поля")
             return
-        
+
         if password != confirm_password:
             QMessageBox.warning(self, "Ошибка", "Пароли не совпадают")
             return
-        
+
         if len(password) < 6:
             QMessageBox.warning(self, "Ошибка", "Пароль должен содержать минимум 6 символов")
             return
-        
+
         if auth_manager.create_admin_user(username, password, employee_name):
             QMessageBox.information(self, "Успех", "Администратор создан успешно!")
-            self.tab_widget.setCurrentIndex(0)  # Switch to login tab
+            self.tab_widget.setCurrentIndex(0)
             self.admin_username_input.clear()
             self.admin_password_input.clear()
             self.admin_password_confirm.clear()
             self.admin_name_input.clear()
         else:
             QMessageBox.warning(self, "Ошибка", "Не удалось создать администратора")
-    
+
     def open_main_window(self):
-        """Open main application window"""
         if not self.main_window:
             self.main_window = MainWindow()
-        
         self.main_window.show()
         self.hide()
-    
+
     def closeEvent(self, event):
-        """Handle window close"""
         if self.main_window:
             self.main_window.close()
         event.accept()
